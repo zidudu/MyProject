@@ -1,0 +1,223 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+//구조체 생성
+/*struct Ball{
+	char B1;
+	char B2[2],B3[3];
+	char B3[4],B5[5];
+}*/
+int main()
+{
+	//범위값
+	int list_value = 5;
+
+	//보드
+	char board[5][5];
+	//for 변수
+	int k;
+	//좌표 변수
+	int level=0, b_pos=0, b_value=0;
+
+	//플레이어 2명
+	char P1[30];
+	char P2[30];
+
+	//턴 변수
+	bool turn = false;
+
+	//검사 변수
+	bool check = false;
+
+
+	//선택 턴
+	int choice =0;
+
+	//플레이어 이름 입력
+
+	printf("플레이어 P1 이름을 입력하세요 : ");
+	scanf("%s", &P1);
+
+
+	printf("플레이어 P2 이름을 입력하세요 : ");
+	scanf("%s", &P2);
+
+	//턴 정하기
+	printf("누가 먼저 하실 건가요?(1 : P1, 2: P2 가 선공) => ");
+	scanf("%d", &choice);
+	if (choice == 1) turn = false;
+	else if (choice == 2) turn = true;
+
+	//보드 초기화
+	for (int i = 0; i < 5; i++) {
+		//i값은 0이 되고, 처음엔 하나만 초기화됨
+		//두번째 i값은 1이 되고, 두번 초기화 됨
+		for (int j = 0; j < i + 1; j++) {
+			board[i][j] = 'O';
+		}
+	}
+	//보드 출력
+	printf("\n===============================================================\n");
+	for (int n = 0; n < 5; n++) {
+		//공백 출력
+		for (int m = (list_value - 1) - n; m > 0; m--) {
+			printf(" ");
+		}
+		//문자 출력
+		for (int b = 0; b < n + 1; b++) {
+			printf("%c ", board[n][b]);
+		}
+		printf("\n");
+	}
+	printf("\n===============================================================\n");
+
+		
+	//플레이어 턴
+	for (k = 0; k < 15; k++) {
+		printf("[%s : X] [%s : @]\n", P1, P2);
+		//플레이어1일때 (turn이 false일때 )
+		if (!turn) {
+			//플레이어가 선택
+			printf("%s 님의 값을 입력해주세요(level,b_pos,b_value) => ",P1);
+			scanf("%d %d %d", &level, &b_pos, &b_value);
+		}
+		//플레이어2일때 (turn이 true일때 )
+		else if(turn) {
+			printf("%s 님의 값을 입력해주세요(level,b_pos,b_value) => ",P2);
+			scanf("%d %d %d", &level, &b_pos, &b_value);
+		}		//b_pos = 3, b_value = 2라면  0 0 1 1 0 이렇게 되야 하니
+		// b_pos - 1하면 2번째 자리가 되고, b_pos -1 + b_value를 하면 
+		// 3-1+2 = 4 가 되니, c는 3,4를 반복하게 됨.(2번)
+
+		/////////////
+		// level,b_pos,b_value 범위 검사
+		/////////////
+		//level 검사
+		if (level > 5 || level < 1) {
+			printf("level 값의 범위가 1~5가 아닙니다..[현재 level : %d\n", level);
+			k--;
+			continue;
+		}
+		//b_pos 검사
+		if (b_pos > 5 || b_pos < 1) {
+			printf("b_pos 값의 범위가 1~5가 아닙니다...[현재 b_pos : %d]\n", b_pos);
+			k--;
+			continue;
+		}
+		//b_pos의 값이 level의 값에 비례한지 검사. 즉. b_pos가 level 보다 작을때를 검사함
+		//그래서 b_pos가 level보다 크다면을 검사. 만약 b_pos가 3인데, level이 2이면 공 2개있는 자리에 위치 3을 넣을 수 없게 됨.
+		else if (b_pos > level) {
+			printf("level=%d 에 따른 b_pos=%d 의 값이 적절하지 않습니다..\n", level, b_pos);
+			k--;
+			continue;
+		}
+		//b_pos의 위치에서 b_value를 더했을때 그 값이 level보다 큰지 작은지 검사
+		//만약 b_pos가 3이고, b_value가 2일때  3 + 2를 한 다음 갯수는 pos 자신도 포함이니 -1을 해줘야 함. 그래서 b_pos+b_value-1  = 3+2-1=4 가 되고 이 값이 level 범위
+		// 안에 있는지를 검사함. level이 3이라면 이것은 말이 되지 않기 때문. 즉 b_pos+b_value-1 <= level
+		//b_pos+b_value-1이 level 보다 크다면 return;
+		else if (b_pos + b_value - 1 > level) {
+			printf("level=%d 과 b_pos=%d 에 따른 b_value=%d 값이 맞지 않습니다..\n", level, b_pos, b_value);
+			k--;
+			continue;
+		}
+		//그 자리에 X나 @가 있는지 검사함.
+		for (int c = b_pos - 1; c <= (b_pos - 1) + (b_value - 1); c++) {
+			//입력한 좌표에 값이 이미 있다면 못넣으니 다시 입력하라고 함 
+			if (board[level - 1][c] != 'O') {
+				printf("중간에 다른 값이 있습니다. 다시 입력하세요 \n");
+				k--;
+				check = true;
+				break; // 여기 안 for문을 나감. k for문은 안 나감.
+			}
+			else {
+				check = false;
+			}
+		}
+		//체킹
+		if (check) continue;
+		//마지막으로.. 그 값을 검사해야 한다. 그 값은 바로 중간에 X나 @가 있다면 그 값은 틀리게 된 값이니...
+		//제일 좋은 방법이 있다. 1.먼저 위에서 입력받은 값의 위치에 X나 @가 있다면 다시 입력해달라는 문구를 달아주고,,
+		//2. 밑에 for문에서는 입력받은 것을 넣는데 도중에 그 값이 있다면 
+
+
+		//초깃값을 b_pos-1로 함, b_pos=3이면 3-1=2가 됨.
+		// b_pos + b_value-1을 하면 2 
+		//////////////
+		// 즉, 좌표값 넣기
+		/////////////////
+		for (int c = b_pos - 1; c <= (b_pos - 1) + (b_value - 1); c++) {
+			//turn이 false라면 , 즉 플1이면 그 좌표에 X를 넣음
+			if (!turn) board[level - 1][c] = 'X';
+			//플2면 그 좌표에 @를 넣음
+			else board[level - 1][c] = '@';
+			/*}*/
+			//입력한 좌표에 값을 못넣는다면, 즉 레벨에 따라 공 넣을 수 있는 게 정해져 있다면
+			//level은 1~5까지만 입력 가능, b_pos는 1~5까지만 입력 가능하고, level의 값에 따라 입력 가능한 게 달라짐
+			//예를 들어 level이 1이면, b_pos는 1밖에 안되고, level이 3이면 b_pos는 1,2,3밖에 안됨 
+			// 즉 if(level >= b_pos) b_pos는 level보다 작거나 같을때만 됨.
+			//그리고 공 개수도 b_pos에 따라 달라짐. 공 개수는 1~5인데, level에 따라 
+			//넣을 수 있는 공의 개수가 정해지고, 공의 위치에 따라 공의 개수도 달라짐
+			//레벨이 4이고 공의 위치가 3이면, 그 공은 2개밖에 넣을 수 가 없음.
+			// ///그래서 for문으로 하여서 그 공의 위치에 따른 개수 검사를 해줘야 하는데, 
+			//이것은 사실 입력을 할때 위에서 해줘야 하는 부분임.
+		}
+
+
+
+		//보드 그리기
+		///			//
+		//  보드 출력   //
+		///		  //
+		//범위값
+		printf("\n===============================================================\n");
+
+		for (int n = 0; n < 5; n++) {
+			//공백 출력
+			for (int m = (list_value - 1) - n; m > 0; m--) {
+				printf(" ");
+			}
+			//문자 출력
+			for (int b = 0; b < n + 1; b++) {
+				printf("%c ", board[n][b]);
+			}
+			printf("\n");
+		}
+		printf("===============================================================\n");
+
+		//남은 공 체크 카운팅 변수
+		int count = 0;
+
+
+		/////////
+		// 모두 그려져 있으면, 즉 board를 모두 검사한 다음 그 값에 O가 하나라도 없으면 turn을 검사하여 마지막에 넣은 사람이 우승하게 출력함
+		for (int i = 0; i < list_value; i++) {
+			for (int j = 0; j < i+1; j++) {
+				if (board[i][j] == 'O') {
+					//printf("<<아직 O 있음.>>");
+
+					//다시 또 체크함. 
+					count++; // 남은 공 개수를 체크해줌.
+				}
+				
+			}
+		}
+		//남은 공 개수가 0이면 남은 공이 없다는 뜻이니 
+		if (count == 0) {
+			printf("\n<<게임 종료!!>>");
+			if (!turn) {
+				printf("\n<<%s 승리!!>>\n",P1);
+				
+			}
+			else {
+				printf("\n<<%s 승리!!>>\n",P2);
+			}
+			return 0;
+		}
+		else{
+			printf("<<남은 공 개수 : %d 개>>\n", count);
+		}
+
+		
+		//턴 교체
+		turn = !turn;
+	}
+}
