@@ -1,0 +1,73 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+//구조체 생성
+/*struct Ball{
+	char B1;
+	char B2[2],B3[3];
+	char B3[4],B5[5];
+}*/
+int main(int argc, char *argv[])
+{
+	//보드
+	char board[5][5];
+	//for 변수
+	int k;
+	//좌표 변수
+	int level,choice
+	//보드 초기화
+	for(int i =0;i<5;i++){
+		for(int j=0;i<i+1;j++){
+			board[i][j] ='○';
+			}
+		}
+	//플레이어 2명
+	char P1='■';
+	//P2='●';
+	
+	//턴 변수
+	bool turn = false;
+	
+	//플레이어 이름 입력
+/*	if(turn == false) {
+		printf("플레이어 P1 입력");
+		scanf("%s",P1);		
+		}
+	else{
+		printf("플레이어 P2 입력");
+		scanf("%s",P2);		
+		}*/
+		int i=0;
+		int j=i+1;
+		//플레이어 턴
+	for(k=0;k<9;k++){
+		if(!turn){
+			//플레이어가 선택
+			printf("P1값 입력(level,choice) =");
+			scanf("%d %d",level,choice);	
+			}
+		else{
+			printf("P2값 입력(level,choice) =");
+			scanf("%d %d",level,choice);
+			}	
+			//입력한 좌표에 값이 있다면
+			if(board[level][choice] != '○'){
+				printf("다시 입력하세요\n");
+				k--;
+				continue;
+				}
+			//지정한 좌표에 ■와 ● 넣기
+			board[level][choice] = P1;
+			printf("\n");
+			
+			//보드 그리기
+			for(int n=0;n<5;n++){
+				printf("■■■■■")
+				printf("      ");
+				printf("      "); printf("%c",board[level][choice]);printf("      "); 
+				for(int a=0;a<)
+				printf("%c",board[level][choice]);printf("      ");
+				printf("    "); printf("%c",board[level][choice]);printf("    ");		
+				printf("      "); printf("%c",board[level][choice]);printf("      ");		
+				}
+	}
+}
