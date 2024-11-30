@@ -1,0 +1,99 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+//Windows 콘솔(CMD)에서 출력이 깨지는 경우에는 아래 코드를 추가하여 콘솔의 코드 페이지를 UTF-8로 변경합니다.
+#include <windows.h>
+/////
+//  오류 부분: 저장한 다음 txt 파일을 보면 한글이 깨지는 오류 발생. 
+//  UTF와 이것저것 해보았지만 작동되지 않음..
+///////
+
+	//계획표 짜는 프로그램 만들기
+//[1]간단 계획
+	//1. 계획을 적는다
+	//2. 오늘 날짜와 함께 계획을 보여준다. 
+	//3. 계획을 세운걸 바탕화면/오늘계획 폴더에 txt 파일로 저장한다.
+	
+
+//[2]계획 구체화
+	//1. 계획을 적는다 [변수 : char 배열 변수, char 배열을 저장할 변수(이중 포인터), ]
+	//1-1.여기에서 숫자를 붙여줄 것이고, 입력을 하고 엔터를 누르면 숫자가 올라간다.
+	//2. 오늘 날짜와 함께 계획을 보여준다. for 과 printf 를 사용
+	// 2-1. 저장하냐는 질문이 나오고 Y/N 이 나온다. Y를 누르면 저장된다.
+	//3. 계획을 세운걸 바탕화면/오늘계획 폴더에 txt 파일로 저장한다. => 이것은 라이브러리 사용하기. 내가 아는 건 fopen, fread 같은게 있음.
+
+//[3]구현
+	//1. 계획을 적는다 [변수 : char 배열 변수, char 배열을 저장할 변수(이중 포인터), ]
+#define MEMORY 100
+	int main() {
+		SetConsoleOutputCP(CP_UTF8);
+		//for 문 수치 변수 
+		int i, j, t;
+		//문자를 입력할 char 배열 변수
+		//이건 함수를 만들고 main에서 for 문을 돌린 다음, 함수를 호출하면=-> 함수에서 동적할당으로 문자열 배열을 만들고
+		// 함수안에서 for문으로 문자열을 입력하게 함. 아니면 for 문 안돌리고 getchar 방식으로 사용해도 되긴 함
+		//
+		
+		//2. 문자열 저장 배열과 각 문자열을 저장하는 포인터 배열 생성
+		char tmp[MEMORY]; // 임시문자 배열 선언
+		//char str[3][100]; //포인터 배열 변수 선언 => 초기화를 해줘야 함
+		char* str[MEMORY] = { 0 };
+		//char t = (char)malloc(sizeof(char) * 100);
+		//*t = tmp;
+		//1. output.txt 파일 생성
+		FILE* file = fopen("C:\\c_file\\output.txt", "w+,css=UTF-8");
+		setlocale(LC_ALL, "ko-KR");
+		// UTF-8 BOM 추가
+		unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
+		fwrite(bom, sizeof(bom), 1, file);
+
+
+		//3. 문자열 저장 배열에 문자열을 입력하고 그것을 str에 저장함.
+		for (i = 0; i < MEMORY; i++) {
+			printf("%d. : ",i+1);
+
+			if (fgets(tmp, sizeof(tmp), stdin) == NULL) { //문자열 입력. 100만큼의 문자를 입력받는다.//EOF 발생하면 종료
+				printf("\nEOF 입력됨 종료함");
+				/*strcpy(str[i],NULL);*/
+				break;
+			}
+			//개행 문자를 제거함
+			tmp[strcspn(tmp, "\n")] = '\0';
+
+			//str 배열마다 메모리 동적 할당을 해줘서 str의 각 행마다 그 메모리를 가리키게 함
+			str[i] = (char*)malloc(strlen(tmp) + 1); // +1은 문자열을 저장할때 \0을 포함하기 위해 추가함. 
+			//strlen으로 입력한 문자열 tmp의 길이만큼 메모리 할당을 해줘서 메모리 아낄 수 있음.
+			
+			//tmp의 값을 str[i] 메모리에 하나씩 복사
+			strcpy(str[i], tmp);
+
+			//문자열을 포인터 배열에 연결
+			/*str[i] = tmp;*/
+			//문자열을 추가
+			///해당 문자열을 file에 저장함.
+			fprintf(file, "%d. %s\n",i+1,str[i]);
+		}
+		//출력
+		printf("\n\n<<<<<<입력한 결과값>>>>>>>\n\n");
+		for (i = 0; i < MEMORY; i++) {
+			//출력할때 해당 문자열이 비어있다면 종료시킴
+			if (str[i] == NULL)
+			{
+				printf("\n 비어있음 종료함\n");
+				break;
+			}
+			//비어있지 않다면 해당 문자열을 출력하고 그 문자의 동적 메모리를 해제함.
+			else
+			{
+				printf("%d. %s\n", i + 1, str[i]); //출력결과 : 잘 나옴.
+				free(str[i]); //동적 메모리 해제
+			}	
+			
+		
+		}
+		//file을 닫음.
+		fclose(file);
+		//입력된 데이터가 저장되었다고 메세지 알림
+		printf("\n입력된 데이터가 'output.txt' 파일에 저장되었습니다.\n");
+	}
