@@ -1,0 +1,68 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include <locale.h>
+
+#define MEMORY 100 // 최대 계획 개수
+
+int main() {
+    int i; // 루프 변수
+    wchar_t tmp[MEMORY]; // 임시 입력 버퍼 (Wide Character)
+    wchar_t* str[MEMORY] = { 0 }; // 입력 문자열을 저장할 Wide Character 포인터 배열 (초기화)
+
+    // 로케일 설정 (UTF-16 사용)
+    _wsetlocale(LC_ALL, L"ko_KR.UTF-8");
+
+    // 파일 생성 및 열기
+    FILE* file = _wfopen(L"output.txt", L"w, ccs=UTF-8");
+    if (file == NULL) {
+        printf("파일 열기 실패. 경로를 확인하세요.\n");
+        return 1;
+    }
+
+    printf("계획을 입력하세요 (최대 %d개, EOF로 종료):\n", MEMORY);
+
+    // 문자열 입력 및 저장
+    for (i = 0; i < MEMORY; i++) {
+        printf("%d. ", i + 1);
+
+        // 문자열 입력 받기
+        if (fgetws(tmp, sizeof(tmp) / sizeof(wchar_t), stdin) == NULL) {
+            printf("\nEOF 입력. 입력 종료.\n");
+            break;
+        }
+
+        // 개행 문자 제거
+        tmp[wcslen(tmp) - 1] = L'\0';
+
+        // 동적 메모리 할당
+        str[i] = (wchar_t*)malloc((wcslen(tmp) + 1) * sizeof(wchar_t));
+        if (str[i] == NULL) {
+            printf("메모리 할당 실패.\n");
+            break;
+        }
+
+        // 문자열 복사
+        wcscpy(str[i], tmp);
+
+        // 파일에 저장
+        fwprintf(file, L"%d. %ls\n", i + 1, str[i]);
+    }
+
+    // 입력된 결과 출력
+    printf("\n\n<<<<<<입력한 결과값>>>>>>>\n\n");
+    for (int j = 0; j < i; j++) {
+        if (str[j] != NULL) {
+            printf("%d. %ls\n", j + 1, str[j]);
+            free(str[j]); // 동적 메모리 해제
+        }
+    }
+
+    // 파일 닫기
+    fclose(file);
+
+    printf("\n입력된 데이터가 'output.txt' 파일에 저장되었습니다.\n");
+
+    return 0;
+}
