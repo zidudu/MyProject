@@ -1,0 +1,498 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+//TextMesh Pro 관련 컴포넌트에 접근하기 위해 선언
+using TMPro;
+using UnityEngine.SceneManagement;
+
+public class GameManager : MonoBehaviour
+{
+    //전체 씬 작업은 courutine 
+    //개별 작업은 invoke
+
+    //몬스터가 출현할 위치를 저장할 배열
+    //public Transform[] points;
+
+    //몬스터가 출현할 위치를 저장할 List 타입 변수 // 모든 Spawn point를 저장하는 데이터 타입을 List 타입으로 변경하는 코드. 배열보다 좀 더 유연한 작업을 할 수 있음.
+    public List<Transform> points = new List<Transform>(); //동적할당
+
+    //몬스터를 미리 생성해 저장할 리스트 자료형
+    public List<GameObject> monsterPool = new List<GameObject>(); //클래스 선언부에 오브젝트 풀로 사용할 list타입의 변수를 선언함. 배열보다 좀더 유연,객체 그룹화해야할때 유용. 그래서 GameObject 타입의 데이터를 monsterPool이 저장함. 그리고 생성할 몬스터의 개수를 지정할 변수도 만듬
+
+    //오브젝트 풀에 생성할 몬스터의 최대 개수
+    public int maxMonsters = 10;
+
+    //몬스터 프리팹을 연결할 변수
+    public GameObject monster;
+    //몬스터 생성 간격
+    public float createTime = 3.0f;
+    //게임의 종료 여부를 저장할 멤버 변수
+    private bool isGameOver;
+
+
+    //총알 관련 변수
+    public int maxAmmo = 30; // 최대 총알 수
+    private int currentAmmo; // 현재 남은 총알 수
+
+    // 읽기 전용 프로퍼티로 currentAmmo 노출
+    public int CurrentAmmo
+    {
+        get { return currentAmmo; }
+    }
+
+    //총알 텍스트 UI
+    public TMP_Text ammoText;
+
+    // R 버튼 이미지 UI
+    public GameObject reloadButtonUI;
+
+    // 재장전 애니메이션용 이미지
+    public Image reloadProgressImage;
+
+    // 재장전 상태를 나타낼 텍스트 UI
+    public TMP_Text reloadText;
+
+
+
+
+    //시간조작
+    public Image slowMotionOverlay; // 파란 이미지를 연결할 변수
+    public Image tButtonFill;       // T 버튼 UI의 FillAmount 조절 이미지
+
+    private bool isTimeManipulationActive = false;
+    private bool isCooldownActive = false;
+
+    private float slowMotionDuration = 10.0f; // 시간 조작 지속 시간
+    private float cooldownDuration = 5.0f;   // 쿨타임 지속 시간
+
+
+    [Header("Game Over UI")]
+    public GameObject gameOverUI;  // 게임 종료 UI를 에디터에서 연결해주세요.
+
+    //싱글턴 인스턴스 선언
+    public static GameManager instance = null; //intstance 변수는 GameManager 클래스를 저장한 변수라고 생각하면 쉬움
+
+    //스코어 텍스트를 연결할 변수
+    public TMP_Text scoreText;
+    //누적 점수를 기록하기 위한 변수
+    static public int totScore = 0;
+    //스코어 텍스트를 연결할 변수
+    public TMP_Text LastscoreText;
+
+    // 현재 점수를 저장할 변수
+    //private int totScore = 0;
+    //스코어 텍스트를 연결할 변수
+    //public TMP_Text scoreText;
+
+
+   
+    public GameObject aimingUI;  // 조준 이미지를 에디터에서 연결하세요.
+
+
+    public GameObject health; // 회복 아이템
+
+
+    //스크립트가 실행되면 가장 먼저 호출되는 유니티 이벤트 함수
+    void Awake()
+    {
+        ////스코어 초기화
+        //totScore = 0;
+        //게임오버 ui 비활성화
+        gameOverUI.SetActive(false);
+        //instance가 할당되지 않았을 경우
+        if (instance == null) //처음 실행하는것이라면 instance 변수에 gamemanager 스크립트를 할당함.
+        {
+            instance = this; //할당
+        }
+        //다른신으로 전환했다가 다시 원래 씬으로 되돌아오면 또 다른 gamemanager 스크립트의 awake 함수가 실행되는데, 이때 instance변수는 static이라 이미 값이 들어있음. 따라서 else if 구문 실행하게 되어 처음 생성된 gamemanager의 인스턴스와 두번째 생성된 gamemanager의 인스턴스가 다르기 때문에  두번째 생성된 gamemanger 인스턴스는 삭제함. 즉 , 최초에 생성된 gamemanager만 남게 되므로 하나의 클래스가 지속해서 유지되는 것이다.
+        //instance에 할당된 클래스의 인스턴스가 다를 겨우 새로 생성된 클래스를 의미함
+        else if (instance != this)
+        {  //자기 자신이 인스턴스가 아니면
+            Destroy(this.gameObject); //이 오브젝트를 삭제 처리함
+        }
+        //다른 씬으로 넘어가더라도 삭제하지 않고 유지함
+        //DontDestroyOnLoad(this.gameObject);
+    }
+    void Start()
+    {
+
+        //파란 이미지 비활성화
+        slowMotionOverlay.gameObject.SetActive(false);
+        //T 버튼 가리개 비활성화
+        tButtonFill.gameObject.SetActive(false);
+
+
+        // 시작 시 비활성화
+         aimingUI.SetActive(false);
+        
+        
+        //몬스터 오브젝트 풀 생성
+        CreateMonsterPool();
+
+
+
+        //SpawnPointGroup 게임오브젝트의 Transform 컴포넌트 추출
+        Transform spawnPointGroup = GameObject.Find("SpawnPointGroup")?.transform;
+        //SpawnPointGroup 하위에 있는 모든 차일드 게임오브젝트의 Transform 컴포넌트 추출
+        //points = spawnPointGroup?.GetComponentsInChildren<Transform>();
+        //spawnPointGroup?.GetComponentsInChildren<Transform>(points); //직접명령
+        foreach (Transform point in spawnPointGroup) //페어런트의 Transform을 사용하지 않는다면 배열 또는 리스트의 0번째 항목을 제외하고 사용해야되서 페어런트에 있는 컴포넌트는 제외하고 순전히 차일드에 있는 컴포넌트만 추출해한다면 다음과 같이 작성해야됨.
+        {
+            points.Add(point);
+        }
+        //일정한 시간 간격으로 함수를 호출
+        InvokeRepeating("CreateMonster", 2.0f, createTime); //2.0f는 대기시간, createTime 호출간격임. 그러면 딜레이가 두번 일어남.  함수실행하는데 걸리는 시간 2초, 다시 반복하여 실행하는 시간은 3초임.
+                                         
+        
+        // 아이템도 3초 간격으로 생성
+        InvokeRepeating("CreateItem", 2.0f, 3.0f);
+
+
+
+
+        //스코어 점수 출력
+        //totScore = PlayerPrefs.GetInt("TOT_SCORE", 0); //PlayerPrefs 클래스는 int,float,string,bool 타입의 변수를 저장하고 로드하는 기능을 제공한다. 데이터를 저장할때는 키이름(TOT_SCORE)과 저장데이터(0)을 인자로 전달함.
+        DisplayScore(0);
+
+        // 총알 초기화
+        currentAmmo = maxAmmo;
+        UpdateAmmoUI();
+
+
+        reloadProgressImage.fillAmount = 0; // 재장전 애니메이션 초기화
+        // R 버튼 UI 비활성화
+        HideReloadUI(); // 이 함수에 넣어놓고 편하게 사용함
+        //reloadButtonUI.SetActive(false);
+        ////리로드 애니메이션 이미지와 reload 문자를 일단 비활성화해놓음
+        //reloadProgressImage.gameObject.SetActive(false);
+        //reloadText.gameObject.SetActive(false);
+
+        //reloadButtonUI.SetActive(false);
+        //reloadProgressImage.gameObject.SetActive(false);
+        //reloadText.gameObject.SetActive(false);
+        // 게임 종료 UI 비활성화
+        if (gameOverUI != null)
+            gameOverUI.SetActive(false);
+
+        // Player가 사망했을 때 호출되는 이벤트에 함수 연결
+        PlayerCtrl.OnPlayerDie += OnPlayerDied;
+    }
+    void OnPlayerDied()
+    {
+        // 에임 ui  비활성화
+        aimingUI.SetActive(false);
+        // 게임 종료 UI 활성화
+        if (gameOverUI != null)
+            gameOverUI.SetActive(true);
+        LastscoreText.text = $"<color=#00ff00>SCORE :</color> <color=#00ff00>{totScore:#,##0}</color>";
+    }
+    //포인트에 몬스터 생성하는 함수
+    void CreateMonster()
+    {
+        //몬스터의 불규칙한 생성 위치 산출
+        int idx = Random.Range(0, points.Count);
+        //몬스터 프리팹 생성
+        //Instantiate(monster, points[idx].position, points[idx].rotation);
+
+        //오브젝트 풀에서 몬스터 추출
+        GameObject _monster = GetMonsterInPool();
+
+        //이건 gpt 코드임
+        if (_monster != null)
+        {
+            // 추출한 몬스터의 위치와 회전을 설정
+            _monster.transform.SetPositionAndRotation(points[idx].position, points[idx].rotation);
+
+            //추가된것
+            // 몬스터 초기화 (MonsterCtrl의 메서드 호출)
+            _monster.GetComponent<MonsterCtrl>()?.InitializeMonster();
+
+            // 추출한 몬스터를 활성화
+            _monster.SetActive(true);
+        }
+
+        //이건 교과서 코드임.
+        ////추출한 몬스터의 위치와 회전을 설정
+        //_monster?.transform. SetPositionAndRotation(points[idx].position, points[idx].rotation); //_monster가 null이면 위치회전 설정하지않고 활성화하지도 않음.
+        ////추출한 몬스터를 활성화
+        //_monster?.SetActive(true);
+    }
+
+    void CreateItem()
+    {
+        if (points.Count == 0) return;
+
+        int idx = Random.Range(0, points.Count);
+        Vector3 spawnPos = points[idx].position;
+        SpawnRandomItem(spawnPos);
+    }
+    public void SpawnRandomItem(Vector3 spawnPosition)
+    {
+        
+        GameObject itemToSpawn = null;
+
+       
+                
+       itemToSpawn = health;
+              
+
+        if (itemToSpawn != null)
+        {
+            GameObject tempItem = Instantiate(itemToSpawn, spawnPosition, Quaternion.identity);
+
+            Collider itemCollider = tempItem.GetComponent<Collider>();
+            if (itemCollider != null)
+            {
+                float halfHeight = itemCollider.bounds.extents.y;
+                Vector3 adjustedPos = tempItem.transform.position;
+                adjustedPos.y += halfHeight;
+                tempItem.transform.position = adjustedPos;
+            }
+
+            Destroy(tempItem, 20.0f);
+            Debug.Log($"아이템 생성: {itemToSpawn.name} 위치: {tempItem.transform.position}");
+        }
+    }
+
+    //오브젝트 풀에 몬스터 생성
+    //maxMonsters 수만큼 반복하여 생성하고 List타입의 monsterPool에 추가함.
+    void CreateMonsterPool()
+    {
+        for (int i = 0; i < maxMonsters; i++)
+        {
+            //몬스터 생성
+            var _monster = Instantiate<GameObject>(monster);
+            //몬스터의 이름을 저장
+            _monster.name = $"Monster_{i:00}";
+            //몬스터 비활성화
+            _monster.SetActive(false);
+
+            //생성한 몬스터를 오브젝트 풀에 추가
+            monsterPool.Add(_monster);
+        }
+    }
+
+    //오브젝트 풀에서 사용가능한 몬스터를 추출해 반환하는 함수
+    public GameObject GetMonsterInPool()
+    {
+        //오브젝트 풀의 처음부터 끝까지 순회
+        foreach (var _monster in monsterPool)
+        {
+            //비활성화 여부로 사용가능한 몬스터를 판단
+            if (_monster.activeSelf == false) //비활성화 되어있으면 몬스터를 반환하여 그걸 쓰게 함
+            {
+                //몬스터 반환
+                return _monster;
+            }
+        }
+        //foreach 끝나면 null 반환
+        return null;
+    }
+    //점수를 누적하고 출력하는 함수
+    public void DisplayScore(int score)
+    {
+        totScore += score; //총합 점수에 score값을 더함.
+        scoreText.text = $"<color=#00ff00>SCORE :</color> <color=#00ff00>{totScore:#,##0}</color>";
+
+        ////스코어 저장
+        //PlayerPrefs.SetInt("TOT_SCORE", totScore); //setint로 스코어값 저장함.
+        //totScore = PlayerPrefs.GetInt("TOT_SCORE", 199);
+    }
+
+    //총알 발사 함수
+    public void ShootBullet()
+    {
+        if (currentAmmo > 0) // 총알이 남아있는 경우에만 발사
+        {
+            currentAmmo--; // 총알 차감
+            UpdateAmmoUI(); // UI 업데이트
+            Debug.Log($"총알 발사! 남은 총알: {currentAmmo}");
+
+            // 실제 총알 발사 로직 추가 가능
+            // 예: Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+        }
+        else
+        {
+            Debug.Log("총알 부족! 재장전이 필요합니다.");
+            ShowReloadUI(); // R 버튼 UI 활성화
+        }
+    }
+    // T 키를 누를 때 호출되는 함수
+    public void ActivateTimeManipulation()
+    {
+        if (isTimeManipulationActive || isCooldownActive)
+            return; // 이미 활성화 중이거나 쿨타임일 경우 무시
+
+        StartCoroutine(TimeManipulationRoutine());
+    }
+
+    private IEnumerator TimeManipulationRoutine()
+    {
+        // 시간 조작 시작
+        isTimeManipulationActive = true;
+
+        // 파란 이미지 활성화
+        if (slowMotionOverlay != null)
+            slowMotionOverlay.gameObject.SetActive(true);
+        //T 버튼 가리개 활성화
+        tButtonFill.gameObject.SetActive(true);
+
+        // T 버튼 FillAmount 진행
+        StartCoroutine(UpdateTButtonUI(true)); // FillAmount 진행
+
+        yield return new WaitForSeconds(slowMotionDuration);
+
+        // 파란 이미지 비활성화
+        if (slowMotionOverlay != null)
+            slowMotionOverlay.gameObject.SetActive(false);
+
+        isTimeManipulationActive = false;
+
+        // T 버튼 쿨타임
+        isCooldownActive = true;
+        StartCoroutine(UpdateTButtonUI(false)); // 쿨타임 UI 진행
+
+        yield return new WaitForSeconds(cooldownDuration);
+        isCooldownActive = false;
+    }
+
+    private IEnumerator UpdateTButtonUI(bool isActive)
+    {
+        float duration = isActive ? slowMotionDuration : cooldownDuration;
+        float elapsedTime = 0;
+
+        while (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float fillValue = elapsedTime / duration;
+
+            if (tButtonFill != null)
+                tButtonFill.fillAmount = isActive ? fillValue : (1 - fillValue);
+
+            yield return null;
+        }
+
+        // 쿨타임 완료 시 FillAmount 초기화
+        if (!isActive && tButtonFill != null)
+            tButtonFill.fillAmount = 0;
+    }
+
+    //게임의 종료 여부를 저장할 프로퍼티
+    public bool IsGameOver //이걸 다른 곳에서 건드림. 
+    {
+        get { return isGameOver; } //외부에 반환할때 get을 씀. 게임이 끝났을때 이 값을 던져줌
+        set //값을 대입하거나 저장할때 
+        {
+            isGameOver = value; // 프로퍼티에 값을 대입하면 그 값은 value 키워드를 통해 전달됨.
+            //게임 오버가 되었을때 CancelInvoke로 계속 반복되는 프로세스를 정지
+            if (isGameOver)
+            {
+                CancelInvoke("CreateMonster");
+
+            }
+        }
+    }
+
+
+
+    //총알 UI 업데이트 함수
+    void UpdateAmmoUI()
+    {
+        ammoText.text = $"Ammo: {currentAmmo}/{maxAmmo}";
+
+        // 총알이 다 떨어졌으면 R 버튼 UI 활성화
+        if (currentAmmo <= 0)
+        {
+            ShowReloadUI();
+        }
+    }
+    // R 버튼 UI 활성화 함수
+    void ShowReloadUI()
+    {
+        reloadButtonUI.SetActive(true);
+        //reloadProgressImage.gameObject.SetActive(true); // Progress 이미지 활성화
+        //reloadText.gameObject.SetActive(true);         // Reload 텍스트 활성화
+        //reloadProgressImage.fillAmount = 0; //화면 가리는 값을 0으로 하여 일단 보여지게 함
+        //reloadText.text = "Reloading...";              // 텍스트 설정
+
+    }
+
+    // R 버튼 UI 비활성화 함수
+    void HideReloadUI()
+    {
+        reloadButtonUI.SetActive(false);
+        reloadProgressImage.gameObject.SetActive(false);
+        reloadText.gameObject.SetActive(false);
+
+    }
+
+
+    // 재장전 함수
+    public void StartReload() // 이 함수를 PlayerCtrl에서 호출함.
+                              // 플레이어가 R버튼을 누르면 GameManager에 있는 이 함수를 호출하여 재장전을 하게 함
+    {
+        StartCoroutine(ReloadCoroutine()); //코루틴
+    }
+
+    // 재장전 애니메이션 Coroutine
+    private IEnumerator ReloadCoroutine()
+    {
+        float reloadTime = 2.0f; //장전 시간
+        float elapsedTime = 0; //나중 시간
+
+        // R 버튼 UI 활성화
+        ShowReloadUI();
+        reloadProgressImage.gameObject.SetActive(true); // Progress 이미지 활성화
+        reloadText.gameObject.SetActive(true);         // Reload 텍스트 활성화
+        reloadProgressImage.fillAmount = 0; //화면 가리는 값을 0으로 하여 일단 보여지게 함
+        reloadText.text = "Reloading...";              // 텍스트 설정
+
+
+        while (elapsedTime < reloadTime)
+        {
+            elapsedTime += Time.deltaTime;
+            reloadProgressImage.fillAmount = elapsedTime / reloadTime; // 진행률 업데이트 // elapsedTime은 점점 값이 커져서 fillAmount도 값이 커지게 되어 화면이                                                          //재장전되는 것처럼 보임
+            yield return null;
+        }
+
+        // 재장전 완료
+        currentAmmo = maxAmmo;
+        //총알 갯수 업데이트 (재장전 완료)
+        UpdateAmmoUI();
+
+        // 완료 메시지 표시
+        reloadText.text = "Reload Complete!";
+        yield return new WaitForSeconds(1.0f); // 1초 동안 메시지를 표시
+
+        //R버튼 비활성화
+        HideReloadUI();
+    }
+    // 현재 활성화된 씬을 다시 로드하는 함수
+    public void RestartCurrentScene()
+    {
+        // 현재 활성화된 씬의 buildIndex를 가져옴
+        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
+
+        // 현재 씬 재로딩
+        SceneManager.LoadScene(currentSceneIndex);
+        totScore = 0;
+
+    }
+    void Update()
+    {
+        // Tab 키를 누르고 있을 때 조준 UI 활성화, 떼면 비활성화
+        if (aimingUI != null)
+        {
+            if (Input.GetKey(KeyCode.Tab))
+            {
+                aimingUI.SetActive(true);
+            }
+            else
+            {
+                aimingUI.SetActive(false);
+            }
+        }
+
+    }
+}
