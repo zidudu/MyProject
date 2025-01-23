@@ -1,0 +1,35 @@
+/*
+   Arduino UNO 기준
+   핀9(OC1A)에서 10Hz PWM 출력
+   - Timer1 (16비트) 사용
+   - Fast PWM (모드14, TOP=ICR1)
+   - 주파수 f_PWM = 16MHz / (Prescaler * (1 + ICR1)) 
+     여기서는 ICR1=24999, prescaler=64 → 약 10Hz
+   - 듀티비(%) = OCR1A / ICR1 × 100
+*/
+void setup() {
+  // 1) 핀9(OC1A)를 출력으로 설정
+  pinMode(11, OUTPUT);
+
+  // 2) Timer1 설정
+  //    ICR1 = 24999 (TOP)
+  ICR1 = 24999;
+  
+  //    Fast PWM 모드(모드 14): WGM13=1, WGM12=1, WGM11=1, WGM10=0
+  //    OC1A 비반전 출력 (COM1A1=1, COM1A0=0) → 듀티비는 OCR1A로 결정
+  TCCR1A = (1 << COM1A1) | (1 << WGM11);
+  TCCR1B = (1 << WGM13) | (1 << WGM12);
+
+  // 3) 분주율(Prescaler) = 64 (CS12:0=011 → CS11=1, CS10=1)
+  TCCR1B |= (1 << CS11) | (1 << CS10);
+
+  // 4) 듀티 설정: 50% 예시
+  //    듀티(%) = OCR1A / ICR1 × 100
+  //    여기서는 12500/24999 ≈ 50%
+  OCR1A = 12500;
+}
+
+void loop() {
+  // 이 예제에서는 loop()에서 할 일이 없음.
+  // 핀9에 10Hz, 50% 듀티 PWM이 계속 출력됩니다.
+}
