@@ -1,0 +1,75 @@
+
+#include <MsTimer2.h>
+#define CHECK_PORT_OSC1 13
+#define CHECK_PORT_OSC2 11
+//횟수. toggle_count를 인터럽트에서 증가시킴. 정해진 값까지 증가됨
+int toggle_count = 0;
+
+//OSC1 HIGH LOW 반전시키기 위한 변수
+int oscillo_toggle = 1;
+
+//아날로그 증가 변수
+int analog_value = 0;
+
+void setup() {
+ //시리얼 통신
+ //Serial.begin(115200);
+// 핀 9(OC1A) 출력
+  //pinMode(9, OUTPUT);
+//핀 OSC1, OSC2 출력으로 설정(다른 선은 GND로 연결되어있음)
+ pinMode(CHECK_PORT_OSC1, OUTPUT);
+ pinMode(CHECK_PORT_OSC2, OUTPUT);
+  // 1) ICR1 = 24999 설정
+  ICR1 = 24999;
+
+  // 2) Fast PWM 모드 (WGM13:0 = 14 -> WGM13=1, WGM12=1, WGM11=1, WGM10=0)
+  //    OC1A 비반전 출력 (COM1A1=1, COM1A0=0)
+  TCCR1A = (1 << WGM11) | (1 << COM1A1);
+  TCCR1B = (1 << WGM13) | (1 << WGM12);
+
+  // 3) 분주율 64 (CS12:0 = 011 -> CS11=1, CS10=1)
+  TCCR1B |= (1 << CS11) | (1 << CS10);
+
+  // 4) 초기 듀티 0%
+  OCR1A = 0;
+
+ 
+
+//-> Interrupt_ms_value로 인터럽트 함수를 실행시키기 위해 세팅해놓음
+  MsTimer2::set(1, Interrupt_MS);
+  // 인터럽트 실행
+  MsTimer2::start();
+
+}
+//인터럽트 함수
+void Interrupt_MS(){
+  
+  digitalWrite(CHECK_PORT_OSC1,oscillo_toggle);
+  // 횟수 증가
+  toggle_count += 1;
+  //반전
+oscillo_toggle = !oscillo_toggle;
+ 
+}
+
+
+
+void loop() {
+ analogWrite(CHECK_PORT_OSC2, analog_value);
+
+  do{
+    //
+    delay(1);
+  } while(toggle_count <= 5); // max_toggle값보다 toggle_count가 더 커지게 된다면 while문을 빠져나오게 됨
+     
+  toggle_count = 0;
+  //아날로그 값 증가함.
+  analog_value++;
+
+//2ms 까지 감. 
+if(analog_value >= 256){
+  analog_value = 0;
+}
+
+
+}
