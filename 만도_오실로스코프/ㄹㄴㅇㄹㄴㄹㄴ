@@ -1,0 +1,71 @@
+#include <MsTimer2.h>
+
+//////////////////////////////////////////////////////////
+// PWM 설정 관련
+//////////////////////////////////////////////////////////
+static const unsigned long PWM_TOP = 24999;  // 10Hz (ICR1=24999)
+static const int DUTY_STEP_MAX = 200;        // 듀티단계 최대값
+static const int DUTY_STEP_INC = 2;          // 5ms마다 +2
+volatile int dutyStep = 0;                  // 현재 듀티 단계(0 ~ DUTY_STEP_MAX)
+
+//////////////////////////////////////////////////////////
+// 1ms마다 불리는 인터럽트에서 5ms마다 듀티 변경
+//////////////////////////////////////////////////////////
+volatile int toggleCount = 0;
+
+void interrupt_1ms() {
+  // 1) 매 1ms마다 카운트
+  toggleCount++;
+
+  // 2) 5ms마다 듀티를 변경 (toggleCount가 5 이상이면 5ms 지남)
+  if (toggleCount >= 5) {
+    toggleCount = 0;
+
+    // 듀티단계 +2
+    dutyStep += DUTY_STEP_INC;
+    if (dutyStep > DUTY_STEP_MAX) {
+      dutyStep = 0;
+    }
+
+    // 0~200 범위(dutyStep)를 0~24999 범위로 매핑
+    //     OCR1A = (ICR1 * dutyStep) / DUTY_STEP_MAX
+    unsigned long mappedDuty = ((unsigned long)PWM_TOP * dutyStep) / DUTY_STEP_MAX;
+    OCR1A = (uint16_t)mappedDuty;
+  }
+}
+
+//////////////////////////////////////////////////////////
+// 초기 설정
+//////////////////////////////////////////////////////////
+void setup() {
+  // (필요시 시리얼 모니터)
+  // Serial.begin(115200);
+
+  // 1) 핀9(OC1A) PWM 출력으로 설정
+  pinMode(9, OUTPUT);
+
+  // 2) Timer1 설정 (10Hz)
+  //    - Fast PWM 모드( WGM13=1, WGM12=1, WGM11=1, WGM10=0 )
+  //    - TOP = ICR1
+  //    - 분주율 64 → ICR1=24999 => 대략 10Hz (주기 ~100ms)
+  ICR1 = PWM_TOP;  // 24999
+  TCCR1A = (1 << WGM11) | (1 << COM1A1); // COM1A1=1→핀9 비반전 PWM
+  TCCR1B = (1 << WGM13) | (1 << WGM12);
+  // CS12:0 = 011 => 분주64
+  TCCR1B |= (1 << CS11) | (1 << CS10);
+
+  // 초기 듀티 0%
+  OCR1A = 0;
+
+  // 3) MsTimer2로 1ms 간격 인터럽트 설정
+  MsTimer2::set(1, interrupt_1ms); // 1ms 주기
+  MsTimer2::start();
+
+  // 끝.
+}
+
+void loop() {
+  // 이 예제에서는 loop()에서 특별히 할 일 없음.
+  // 10Hz PWM은 Timer1이 자동 생성,
+  // 듀티 변경은 MsTimer2(1ms→5ms마다 +2)에서 처리.
+}
