@@ -1,0 +1,23 @@
+public class Hello2030 {
+	
+	//메인 함수
+	public static void main(String[] args) {
+	var price = 200; // price는 int 타입으로 결정
+	var name = "kitae"; // name 은 String 타입으로 결정
+	var pi = 3.14; // pi는 double 타입으로 결정
+	
+	//메소드 호출
+	System.out.println("price = " + (price + 1000)); //200+ 1000 = 1200
+	System.out.println("name = " + name); // kitae
+	System.out.println("pi = " + pi*10); // pi * 10 = 31.4
+	}
+}
+
+
+/*
+ 
+price = 1200
+name = kitae
+pi = 31.400000000000002
+
+*/
