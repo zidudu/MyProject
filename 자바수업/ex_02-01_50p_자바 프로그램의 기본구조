@@ -1,0 +1,29 @@
+
+public class Hello2030 {
+	
+	//더하는 함수
+	public static int sum(int n, int m) {
+		return n+m;
+	}
+	
+	//메인 함수
+	public static void main(String[] args) {
+	int i = 20;
+	int s;
+	char a;
+	
+	//메소드 호출
+	s = sum(i,10); //20+10 = 30이 s 변수에 들어감
+	a = '?';
+	System.out.println(a); //문자 ? 출력
+	System.out.println("Hello"); // Hello 문자열 출력
+	System.out.println(s); // 정수 s 값 30 출력
+	}
+}
+/*
+ 
+?
+Hello
+30
+
+*/
