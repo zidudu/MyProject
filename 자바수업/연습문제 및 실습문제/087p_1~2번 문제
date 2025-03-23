@@ -1,0 +1,39 @@
+import java.util.Scanner;
+public class Hello2030 {
+	//87p 실습 문제 1~5번
+	
+	
+	
+	//메인 함수
+	public static void main(String[] args) {
+		Scanner scanner = new Scanner(System.in);
+		
+		// 1. 두 정수를 입력받아 합 구하여 출력하는 프로그램 작성. 키보드 입력은 Scanner 클래스 이용
+		System.out.print("두 정수를 입력하세요>>"); // 두 정수 입력하라고 문구 나옴
+		int a = scanner.nextInt(); // 첫 정수
+		int b= scanner.nextInt(); // 두번째 정수
+		//합친 거 출력
+		System.out.println("10+20은 "+(a+b)); //10+20은 30
+		
+		
+		//2. 한 층의 높이가 5m 일때 , 건물이 몇층인지 입력받아 높이를 출력하라.
+		System.out.print("몇 층인지 입력하세요>");
+		int floor = scanner.nextInt(); //층 입력
+		System.out.println((floor * 5)+"m 입니다.");
+		
+		
+		scanner.close();
+		
+	}
+	}
+
+
+/*
+ 
+
+두 정수를 입력하세요>>10 20
+10+20은 30
+몇 층인지 입력하세요>115
+575m 입니다.
+
+*/
