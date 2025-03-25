@@ -28,7 +28,7 @@ public class Hello2030 {
 				System.out.print(">> ");
 				} // 양수인 경우 덧셈
 		}
-		System.out.println("\n[전체 입력값 = "+ sum +"]" );
+		System.out.println("\n[전체 입력값의 합 = "+ sum +"]" );
 	
 		
 		scanner.close();
