@@ -18,6 +18,13 @@ public class Hello2030 {
 			System.out.println();
 		}
 		
+		
+		// for-each로 2차원 배열 출력
+		for(double[] sc: score) { // [D@1b28cdfa   [D@7229724f   [D@4c873330   [D@119d7047
+			for(double i : sc)
+				System.out.print(i + "   ");
+		}
+		System.out.println();
 		int n = score.length; // 배열의 행 개수 4
 		int m = score[0].length; // 배열의 열 개수 2
 		System.out.println("4년 전체 평점 평균은 " + sum/(n*m)); // 평균 출력
@@ -43,6 +50,7 @@ public class Hello2030 {
 4 학년 전체 1 학기 평점 : 4.1
 4 학년 전체 2 학기 평점 : 4.2
 
+3.3   3.4   3.5   3.6   3.7   4.0   4.1   4.2   
 4년 전체 평점 평균은 3.725
 
 */
